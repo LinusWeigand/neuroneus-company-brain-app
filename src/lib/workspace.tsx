@@ -1,7 +1,6 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react';
-import { buildGraph, type Entry, type GraphNode, type GraphLink } from '../features/docs/view';
 import type { ListMember, MemberNode, GoalNode } from '../features/team/view';
 import type { GoalCard, TaskColumn } from '../features/goals/view';
 import type {
@@ -26,12 +25,6 @@ export type Workspace = {
     totalOverdue: number;
   };
   goals: { goalCards: GoalCard[]; taskColumns: TaskColumn[] };
-  docs: {
-    entries: Entry[];
-    rootEntries: Entry[];
-    subpageCount: Map<string, number>;
-    graph: { nodes: GraphNode[]; links: GraphLink[] };
-  };
 };
 
 type State = { data: Workspace | null; error: string | null; reload: () => void };
@@ -42,9 +35,8 @@ const WorkspaceContext = createContext<State | null>(null);
  * Workspace content, fetched after sign-in.
  *
  * None of this ships in the JavaScript bundle: it lives in api/_data and is
- * only reachable through /api/data, which requires a session. Anything derived
- * from it (the knowledge graph, roll-ups) is computed here rather than stored,
- * so there is a single source of truth.
+ * only reachable through /api/data, which requires a session. Roll-ups are
+ * computed here rather than stored, so there is a single source of truth.
  */
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [raw, setRaw] = useState<unknown>(null);
@@ -76,11 +68,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<State>(() => {
     if (!raw) return { data: null, error, reload };
-    const w = raw as Omit<Workspace, 'team' | 'docs'> & {
+    const w = raw as Omit<Workspace, 'team'> & {
       team: Omit<Workspace['team'], 'totalOverdue'>;
-      docs: { entries: Entry[] };
     };
-    const entries = w.docs.entries;
     return {
       error,
       reload,
@@ -92,15 +82,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           totalOverdue: w.team.members.reduce((n, m) => n + m.overdue, 0),
         },
         goals: w.goals,
-        docs: {
-          entries,
-          rootEntries: entries.filter((e) => !e.parent),
-          subpageCount: entries.reduce((m, e) => {
-            if (e.parent) m.set(e.parent, (m.get(e.parent) ?? 0) + 1);
-            return m;
-          }, new Map<string, number>()),
-          graph: buildGraph(entries),
-        },
       },
     };
   }, [raw, error, reload]);

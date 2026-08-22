@@ -38,9 +38,18 @@ export type AgendaEvent = {
 };
 
 /**
- * A run of briefing prose: either plain text, or a reference to a goal or task
- * that renders as a chip. Stored as runs rather than as marked-up text so the
+ * A run of briefing prose. Stored as runs rather than as marked-up text so the
  * browser never has to parse anything back out.
+ *
+ * The three reference kinds are visually distinct in the product design and so
+ * are distinct here: a task is a plain blue link, a goal is a chip carrying its
+ * own colour swatch, and a person is an avatar followed by their name. A single
+ * generic `ref` cannot render any of them correctly.
  */
-export type BriefingSegment = { text: string } | { ref: string; color?: string };
+export type BriefingSegment =
+  | { text: string }
+  | { task: string }
+  | { goal: string; color: string }
+  | { person: string };
+
 export type BriefingParagraph = BriefingSegment[];

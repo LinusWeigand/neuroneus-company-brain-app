@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { currentUser, json } from './_lib/auth.js';
 import {
-  AGENDA, BRIEFING, EDGES, ENTRIES, FOCUS_TIME, GOAL_CARDS, LIST_MEMBERS,
+  AGENDA, BRIEFING, EDGES, FOCUS_TIME, GOAL_CARDS, LIST_MEMBERS,
   MEMBERS, PREPARED_FOR_YOU, TASK_COLUMNS, TEAM_GOALS, WAITING_ON_YOU,
   WORKSPACE_NAME,
 } from './_data/workspace.js';
@@ -39,7 +39,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       team: { members: MEMBERS, goals: TEAM_GOALS, edges: EDGES, listMembers: LIST_MEMBERS },
       goals: { goalCards: GOAL_CARDS, taskColumns: TASK_COLUMNS },
-      docs: { entries: ENTRIES },
     });
   } catch (err) {
     console.error('data fetch failed:', err);

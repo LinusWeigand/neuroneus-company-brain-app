@@ -1,4 +1,4 @@
-import { Atom, CalendarRange, FolderOpen, House, Inbox, Layers, Users } from 'lucide-react';
+import { Atom, CalendarRange, House, Inbox, Layers, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export type NavItem = { to: string; label: string; Icon: LucideIcon };
@@ -9,7 +9,6 @@ export const NAV: NavItem[] = [
   { to: '/inbox', label: 'Inbox', Icon: Inbox },
   { to: '/goals', label: 'Goals & Tasks', Icon: Layers },
   { to: '/team', label: 'Team', Icon: Users },
-  { to: '/docs', label: 'Docs', Icon: FolderOpen },
   { to: '/calendar', label: 'Calendar', Icon: CalendarRange },
   { to: '/ora', label: 'Ora', Icon: Atom },
 ];

@@ -7,13 +7,11 @@ import { Splash } from './components/Splash';
 import { WorkspaceGate } from './components/WorkspaceGate';
 import { WorkspaceProvider } from './lib/workspace';
 
-/* Split per route. The signed-out bundle has no reason to carry the knowledge
-   graph's force simulation, and a first visit to the Dashboard has no reason
-   to download the Team map. */
+/* Split per route: a first visit to the Dashboard has no reason to download
+   the Team map. */
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Goals = lazy(() => import('./pages/Goals'));
 const Team = lazy(() => import('./pages/Team'));
-const Docs = lazy(() => import('./pages/Docs'));
 
 /**
  * Everything behind the session.
@@ -35,7 +33,6 @@ export default function AuthedApp() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/goals" element={<Goals />} />
               <Route path="/team" element={<Team />} />
-              <Route path="/docs" element={<Docs />} />
               <Route
                 path="/inbox"
                 element={

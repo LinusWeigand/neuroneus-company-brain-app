@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Check, ChevronDown, Clock, House, MessageSquare, X } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { cn } from '../lib/utils';
+import { cn, initials } from '../lib/utils';
 import {
   hhmm, todayLabel, type AgendaEvent, type BriefingParagraph,
 } from '../features/dashboard/view';
@@ -17,13 +17,30 @@ const Avatar = ({ initials }: { initials: string }) => (
   </span>
 );
 
-/** Inline reference to a goal or task inside the narrative. */
-const Ref = ({ children, color }: { children: ReactNode; color?: string }) => (
-  <span
-    className="rounded border px-1 py-0.5 text-[13px] leading-none"
-    style={{ color: color ?? '#93b4d8', borderColor: `${color ?? '#93b4d8'}44` }}
-  >
-    {children}
+/* Inline references inside the narrative. Three kinds, matching the product
+   design: a task reads as a link, a goal as a chip carrying its own colour, and
+   a person as their avatar followed by their name. Sizes are in `em` so each
+   one scales with the prose it sits in. */
+
+const TaskRef = ({ title }: { title: string }) => (
+  <span className="cursor-pointer text-[#6699ff] hover:underline">{title}</span>
+);
+
+const GoalRef = ({ title, color }: { title: string; color: string }) => (
+  <span className="inline-flex max-w-full cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[6px] border border-[#3D3D3D]/50 bg-[#3D3D3D] px-2 py-[0.25em] align-middle text-[0.9em] font-medium leading-none text-app-text transition-colors hover:border-[#676765] hover:bg-[#2E2E2E]">
+    <span className="h-1.5 w-1.5 shrink-0 rounded-[2px]" style={{ background: color }} />
+    <span className="truncate">{title}</span>
+  </span>
+);
+
+const PersonRef = ({ name }: { name: string }) => (
+  <span className="inline">
+    <span className="relative top-[-0.075em] mr-[0.35em] inline-flex h-[1.35em] w-[1.35em] shrink-0 items-center justify-center rounded-full bg-app-text align-middle">
+      <span className="text-[0.47em] font-semibold leading-none text-[#121212]">
+        {initials(name)}
+      </span>
+    </span>
+    <span className="cursor-pointer text-app-text hover:underline">{name}</span>
   </span>
 );
 
@@ -75,8 +92,8 @@ function AgendaRow({ event, index }: { event: AgendaEvent; index: number }) {
           )}
           {(event.goal || event.task) && (
             <div className="flex flex-wrap items-center gap-2">
-              {event.goal && <Ref color={event.goal.color}>{event.goal.title}</Ref>}
-              {event.task && <Ref>{event.task}</Ref>}
+              {event.goal && <GoalRef title={event.goal.title} color={event.goal.color} />}
+              {event.task && <TaskRef title={event.task} />}
             </div>
           )}
         </div>
@@ -88,21 +105,20 @@ function AgendaRow({ event, index }: { event: AgendaEvent; index: number }) {
 /**
  * The narrative, rendered from runs rather than written as markup.
  *
- * Segments are emitted directly into the paragraph instead of being wrapped in
- * spans, so the prose wraps exactly as a single run of text would.
+ * Plain text is emitted straight into the paragraph rather than wrapped in a
+ * span, so the prose wraps exactly as one continuous run would.
  */
 function Briefing({ paragraphs }: { paragraphs: BriefingParagraph[] }) {
   return (
     <div className="space-y-4 text-[15px] leading-[1.8] text-app-text/80">
       {paragraphs.map((segments, p) => (
         <p key={p}>
-          {segments.map((seg, i) =>
-            'ref' in seg ? (
-              <Ref key={i} color={seg.color}>{seg.ref}</Ref>
-            ) : (
-              seg.text
-            ),
-          )}
+          {segments.map((seg, i) => {
+            if ('task' in seg) return <TaskRef key={i} title={seg.task} />;
+            if ('goal' in seg) return <GoalRef key={i} title={seg.goal} color={seg.color} />;
+            if ('person' in seg) return <PersonRef key={i} name={seg.person} />;
+            return seg.text;
+          })}
         </p>
       ))}
     </div>

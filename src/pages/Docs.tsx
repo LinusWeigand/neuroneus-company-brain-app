@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { FolderOpen, Plus, Search } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { KnowledgeGraph } from '../features/docs/KnowledgeGraph';
-import { ROOT_ENTRIES, SUBPAGE_COUNT, preview, typeInfo } from '../features/docs/data';
+import { preview, typeInfo } from '../features/docs/view';
+import { useWorkspace } from '../lib/workspace';
 
 export default function Docs() {
   const [query, setQuery] = useState('');
+  const { rootEntries, subpageCount, graph } = useWorkspace().docs;
 
-  const entries = ROOT_ENTRIES.filter((e) => {
+  const entries = rootEntries.filter((e) => {
     if (!query.trim()) return true;
     const q = query.toLowerCase();
     return e.title.toLowerCase().includes(q) || e.content.toLowerCase().includes(q);
@@ -23,7 +25,7 @@ export default function Docs() {
         {/* The graph is the map of the knowledge base; the list is the index.
             Both stay visible so a link you notice in one is findable in the other. */}
         <div className="hidden w-[340px] shrink-0 xl:block">
-          <KnowledgeGraph />
+          <KnowledgeGraph graph={graph} />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -50,7 +52,7 @@ export default function Docs() {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {entries.map((entry) => {
                 const { label, color } = typeInfo(entry.type);
-                const children = SUBPAGE_COUNT.get(entry.id) ?? 0;
+                const children = subpageCount.get(entry.id) ?? 0;
                 return (
                   <div
                     key={entry.id}

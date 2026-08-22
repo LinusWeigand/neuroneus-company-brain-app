@@ -1,17 +1,21 @@
 import {
-  createContext, useContext, useEffect, useMemo, useState, type ReactNode,
+  createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react';
-import { buildGraph, type Entry, type GraphNode, type GraphLink } from '../features/docs/data';
-import type { ListMember, MemberNode, GoalNode } from '../features/team/data';
-import type { TaskColumn } from '../features/goals/data';
-import type { AgendaEvent, PreparedItem, WaitingItem } from '../features/dashboard/data';
-import type { GoalCard } from '../features/goals/types';
+import { buildGraph, type Entry, type GraphNode, type GraphLink } from '../features/docs/view';
+import type { ListMember, MemberNode, GoalNode } from '../features/team/view';
+import type { GoalCard, TaskColumn } from '../features/goals/view';
+import type {
+  AgendaEvent, BriefingParagraph, PreparedItem, WaitingItem,
+} from '../features/dashboard/view';
 
 export type Workspace = {
+  /** The workspace label in the sidebar. */
+  name: string;
   dashboard: {
     waitingOnYou: WaitingItem[];
     preparedForYou: PreparedItem[];
     agenda: AgendaEvent[];
+    briefing: BriefingParagraph[];
     focusTime: string;
   };
   team: {
@@ -30,7 +34,7 @@ export type Workspace = {
   };
 };
 
-type State = { data: Workspace | null; error: string | null };
+type State = { data: Workspace | null; error: string | null; reload: () => void };
 
 const WorkspaceContext = createContext<State | null>(null);
 
@@ -45,6 +49,13 @@ const WorkspaceContext = createContext<State | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [raw, setRaw] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  const reload = useCallback(() => {
+    setError(null);
+    setRaw(null);
+    setAttempt((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,10 +72,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   const value = useMemo<State>(() => {
-    if (!raw) return { data: null, error };
+    if (!raw) return { data: null, error, reload };
     const w = raw as Omit<Workspace, 'team' | 'docs'> & {
       team: Omit<Workspace['team'], 'totalOverdue'>;
       docs: { entries: Entry[] };
@@ -72,7 +83,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const entries = w.docs.entries;
     return {
       error,
+      reload,
       data: {
+        name: w.name,
         dashboard: w.dashboard,
         team: {
           ...w.team,
@@ -90,7 +103,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         },
       },
     };
-  }, [raw, error]);
+  }, [raw, error, reload]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
@@ -103,6 +116,8 @@ export function useWorkspace(): Workspace {
   return ctx.data;
 }
 
+/** The loading/error state itself, for the gate and for chrome that renders
+ *  alongside the spinner rather than behind it. */
 export function useWorkspaceState(): State {
   const ctx = useContext(WorkspaceContext);
   if (!ctx) throw new Error('useWorkspaceState must be used inside <WorkspaceProvider>');

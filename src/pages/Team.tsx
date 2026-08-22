@@ -3,21 +3,20 @@ import { Users } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { TeamGraph } from '../features/team/TeamGraph';
 import { MemberDetail, MemberTable } from '../features/team/ListView';
-import { LIST_MEMBERS, MEMBERS } from '../features/team/data';
+import { useWorkspace } from '../lib/workspace';
 import { cn } from '../lib/utils';
-
-const TOTAL_OVERDUE = MEMBERS.reduce((n, m) => n + m.overdue, 0);
 
 const TAB =
   'relative z-10 h-full rounded-[6px] px-4 text-sm font-medium transition-colors duration-200 ease-in-out';
 
 export default function Team() {
+  const { members, goals, edges, listMembers, totalOverdue } = useWorkspace().team;
   const [view, setView] = useState<'map' | 'list'>('map');
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
 
   const selectedRow = useMemo(
-    () => LIST_MEMBERS.find((m) => m.id === selectedMember) ?? null,
-    [selectedMember],
+    () => listMembers.find((m) => m.id === selectedMember) ?? null,
+    [listMembers, selectedMember],
   );
 
   /* Switching view drops the selection: a person highlighted in the list has
@@ -59,7 +58,7 @@ export default function Team() {
 
           <span className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[6px] px-2.5 text-sm text-app-muted transition-colors hover:bg-white/10 hover:text-app-text">
             <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-[2px] bg-[#f87171]" />
-            {TOTAL_OVERDUE} overdue
+            {totalOverdue} overdue
           </span>
         </div>
       </div>
@@ -67,9 +66,10 @@ export default function Team() {
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1">
           {view === 'map' ? (
-            <TeamGraph />
+            <TeamGraph members={members} goals={goals} edges={edges} />
           ) : (
             <MemberTable
+              rows={listMembers}
               selectedId={selectedMember}
               onSelect={(id) => setSelectedMember((cur) => (cur === id ? null : id))}
             />

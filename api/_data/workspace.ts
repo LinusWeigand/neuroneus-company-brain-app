@@ -3,11 +3,17 @@
  *
  * This file must never be imported from src/. It is reachable exclusively
  * through api/data.ts, which requires a valid session first — that is what
- * keeps it out of the public JavaScript bundle.
+ * keeps it out of the public JavaScript bundle. `npm run build` greps the
+ * output for strings that only occur here, so a stray import fails the build
+ * rather than quietly shipping this to every visitor.
  *
  * Sample content for now; replace with real queries when the product has
  * customer data. The boundary is what matters, not what is behind it.
  */
+
+/** The workspace label in the sidebar. Moves to the session in phase 2, when
+ *  a user belongs to a company row rather than to the only workspace there is. */
+export const WORKSPACE_NAME = 'Meridian';
 
 /** Reviews other people are blocked on. */
 /** Today at hh:mm as a timestamp, evaluated per request so the agenda always
@@ -89,6 +95,51 @@ export const AGENDA = [
 ];
 
 /** Team members as graph nodes. */
+/** Focus time protected on the calendar today. */
+export const FOCUS_TIME = '5h 12m';
+
+/**
+ * The Daily Briefing narrative.
+ *
+ * Prose with goals and tasks referenced inline, so it is stored as runs rather
+ * than as a string: a segment is either plain text or a reference chip. Markup
+ * in the text would mean parsing it back out in the browser, and a chip needs
+ * its own colour anyway.
+ */
+export const BRIEFING = [
+  [
+    { text: "Northwind is the only thing on this week's critical path. " },
+    { ref: 'Finalize the Northwind pricing proposal' },
+    { text: ' is due today, and nothing else on ' },
+    { ref: 'Q3 revenue push', color: '#60a5fa' },
+    {
+      text:
+        ' can move before those numbers are signed off. Sarah Kim has had the master'
+        + ' agreement waiting on your countersignature since yesterday.',
+    },
+  ],
+  [
+    { ref: 'EU market expansion', color: '#60a5fa' },
+    { text: ' hangs on one decision: ' },
+    { ref: 'Review the Munich office lease' },
+    {
+      text:
+        ' is due in two days, the broker is on the phone about it this afternoon, and'
+        + ' that call is hard to reverse once the lease is countersigned.',
+    },
+  ],
+  [
+    { text: 'You closed ' },
+    { ref: 'Website relaunch brief' },
+    {
+      text:
+        ' yesterday, and Daniel Ross has taken the compliance paperwork off your plate. ',
+    },
+    { ref: 'Hiring: senior engineers', color: '#60a5fa' },
+    { text: ' still has no tasks on it at all — it will not move on its own.' },
+  ],
+];
+
 export const MEMBERS = [
   {
     "id": "am",
@@ -726,123 +777,86 @@ export const TASK_COLUMNS = [
 ];
 
 /** Goal cards shown on the Goals tab. */
+/**
+ * Goal cards behind the Goals tab.
+ *
+ * `percent` is stored rather than derived from done/total. The recovered
+ * design reads "5/12 tasks · 50%", and 5/12 is not 50% — the bar and the count
+ * came from different places in the original. Computing one from the other
+ * would quietly change what the page says.
+ *
+ * `people` holds full names; the avatars derive their initials. The original
+ * stored the initials themselves, which made the roster and the cards
+ * disagree about what a person is.
+ */
 export const GOAL_CARDS = [
   {
     "category": "Sales",
     "priority": "high",
     "title": "Q3 revenue push",
     "description": "Close Northwind and Ardent and lift recurring revenue 30% before the quarter ends.",
-    "status": {
-      "label": "In progress",
-      "color": "#60a5fa"
-    },
-    "tasks": "5/12 tasks · 50%",
-    "progress": 50,
+    "status": { "label": "In progress", "color": "#60a5fa" },
+    "progress": { "done": 5, "total": 12, "percent": 50 },
     "dueDays": 75,
-    "members": [
-      "AM",
-      "SK",
-      "DR"
-    ]
+    "people": ["Alex Morgan", "Sarah Kim", "Daniel Ross"]
   },
   {
     "category": "Operations",
     "priority": "high",
     "title": "EU market expansion",
     "description": "Open the first EU office: legal entity, lease and the local hiring pipeline.",
-    "status": {
-      "label": "In progress",
-      "color": "#60a5fa"
-    },
-    "tasks": "7/9 tasks · 83%",
-    "progress": 83,
+    "status": { "label": "In progress", "color": "#60a5fa" },
+    "progress": { "done": 7, "total": 9, "percent": 83 },
     "dueDays": 30,
-    "members": [
-      "AM",
-      "EC"
-    ]
+    "people": ["Alex Morgan", "Emma Clarke"]
   },
   {
     "category": "People",
     "priority": "medium",
     "title": "Hiring: senior engineers",
     "description": "Three senior hires for the platform team before the January roadmap starts.",
-    "status": {
-      "label": "Not started",
-      "color": "#71717a"
-    },
-    "tasks": "No tasks",
-    "progress": 0,
-    "members": [
-      "AM",
-      "RP"
-    ]
+    "status": { "label": "Not started", "color": "#71717a" },
+    "people": ["Alex Morgan", "Raj Patel"]
   },
   {
     "category": "Marketing",
     "priority": "medium",
     "title": "Website relaunch",
     "description": "New positioning, new site — live before the revenue push needs landing pages.",
-    "status": {
-      "label": "In progress",
-      "color": "#60a5fa"
-    },
-    "tasks": "9/14 tasks · 68%",
-    "progress": 68,
+    "status": { "label": "In progress", "color": "#60a5fa" },
+    "progress": { "done": 9, "total": 14, "percent": 68 },
     "dueDays": 15,
-    "members": [
-      "DR",
-      "AM"
-    ]
+    "people": ["Daniel Ross", "Alex Morgan"]
   },
   {
     "category": "Partnerships",
     "priority": "low",
     "title": "Partner program launch",
     "description": "Stand up the reseller tier: deck, pricing and the first five signed partners.",
-    "status": {
-      "label": "Backlog",
-      "color": "#71717a"
-    },
-    "tasks": "2/6 tasks · 42%",
-    "progress": 42,
+    "status": { "label": "Backlog", "color": "#71717a" },
+    "progress": { "done": 2, "total": 6, "percent": 42 },
     "dueDays": 8,
-    "members": [
-      "DR"
-    ]
+    "people": ["Daniel Ross"]
   },
   {
     "category": "Legal",
     "priority": "medium",
     "title": "Compliance: SOC 2 audit",
     "description": "Evidence collection and the auditor walkthrough for the Type II report.",
-    "status": {
-      "label": "In progress",
-      "color": "#60a5fa"
-    },
-    "tasks": "4/10 tasks · 45%",
-    "progress": 45,
+    "status": { "label": "In progress", "color": "#60a5fa" },
+    "progress": { "done": 4, "total": 10, "percent": 45 },
     "dueDays": 85,
-    "members": [
-      "EC",
-      "DR"
-    ]
+    "people": ["Emma Clarke", "Daniel Ross"]
   },
   {
     "category": "Engineering",
     "priority": "high",
     "title": "Data platform migration",
     "description": "One warehouse instead of four pipelines — the metering the usage caps are billed on.",
-    "status": {
-      "label": "In progress",
-      "color": "#60a5fa"
-    },
-    "tasks": "6/11 tasks · 55%",
-    "progress": 55,
+    "status": { "label": "In progress", "color": "#60a5fa" },
+    "progress": { "done": 6, "total": 11, "percent": 55 },
     "dueDays": 21,
-    "members": [
-      "RP"
-    ]
+    "people": ["Raj Patel"]
   }
 ];
 

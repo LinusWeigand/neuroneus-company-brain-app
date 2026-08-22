@@ -1,6 +1,7 @@
 import { Calendar, EllipsisVertical, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { PRIORITY, TASK_COLUMNS, dueDate, type TaskCard } from './data';
+import { PRIORITY, dueDate, type TaskCard } from './view';
+import { useWorkspace } from '../../lib/workspace';
 
 /** Fades the leftmost 32px so cards dissolve into the panel edge when scrolled. */
 const EDGE_FADE = {
@@ -82,13 +83,15 @@ function Card({ card }: { card: TaskCard }) {
 }
 
 export function TasksView() {
+  const { taskColumns } = useWorkspace().goals;
+
   return (
     <div className="-mx-4 -mb-6 flex flex-1 flex-col">
       <div
         className={'flex w-full flex-1 gap-3 overflow-x-auto px-4 pb-4 app-scroll'}
         style={EDGE_FADE}
       >
-        {TASK_COLUMNS.map((col) => (
+        {taskColumns.map((col) => (
           <div key={col.label} className="w-[300px] shrink-0">
             <div className="mb-3 flex items-center gap-2">
               <span

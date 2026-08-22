@@ -14,6 +14,6 @@ export const NAV: NavItem[] = [
   { to: '/ora', label: 'Ora', Icon: Atom },
 ];
 
-/** The signed-in user and workspace. Hard-coded until auth exists. */
-export const WORKSPACE = { org: 'Orakis', name: 'Meridian' };
-export const USER = { initials: 'AM', name: 'Alex Morgan', email: 'alex@meridian.co' };
+/** The product wordmark above the workspace name. This is branding, not
+ *  customer data, so it is the one label here that stays in the bundle. */
+export const PRODUCT_NAME = 'Orakis';

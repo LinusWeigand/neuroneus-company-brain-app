@@ -1,9 +1,9 @@
 import { ArrowUpRight, X } from 'lucide-react';
 import {
-  EDGES, MEMBERS, OVERDUE,
-  kindOf, labelOf, nodeMeta, panelMeta,
-  type GoalNode, type GraphNodeT, type TaskNode,
-} from './data';
+  OVERDUE,
+  labelOf, nodeMeta, panelMeta,
+  type GoalNode, type GraphNodeT, type MemberNode, type NodeKind, type TaskNode,
+} from './view';
 
 /**
  * Detail panel for the selected graph node.
@@ -13,14 +13,20 @@ import {
  * "Works with" counts goals two members both sit on.
  */
 export function SidePanel({
-  node, neighbours, nodeById, onClose, onSelect,
+  node, members, edges, kindById, neighbours, nodeById, onClose, onSelect,
 }: {
   node: GraphNodeT;
+  members: MemberNode[];
+  edges: [string, string][];
+  /* Built once by TeamGraph from the fetched roster. Was a kindOf() that
+     scanned module-level arrays, which no longer exist. */
+  kindById: Map<string, NodeKind>;
   neighbours: Map<string, Set<string>>;
   nodeById: Map<string, GraphNodeT>;
   onClose: () => void;
   onSelect: (id: string) => void;
 }) {
+  const kindOf = (n: GraphNodeT): NodeKind => kindById.get(n.id) ?? 'task';
   const kind = kindOf(node);
   const linked = [...(neighbours.get(node.id) ?? [])]
     .filter((id) => id !== node.id)
@@ -34,10 +40,10 @@ export function SidePanel({
   // For a member: who else works on the same goals, and on how many.
   const worksWith =
     kind === 'member'
-      ? MEMBERS.filter((m) => m.id !== node.id)
+      ? members.filter((m) => m.id !== node.id)
           .map((m) => {
-            const mine = EDGES.filter(([a]) => a === node.id).map(([, g]) => g);
-            const count = EDGES.filter(([a, g]) => a === m.id && mine.includes(g)).length;
+            const mine = edges.filter(([a]) => a === node.id).map(([, g]) => g);
+            const count = edges.filter(([a, g]) => a === m.id && mine.includes(g)).length;
             return { name: m.name, count };
           })
           .filter((m) => m.count > 0)

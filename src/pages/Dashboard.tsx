@@ -3,9 +3,9 @@ import { Check, ChevronDown, Clock, House, MessageSquare, X } from 'lucide-react
 import { Breadcrumb } from '../components/Breadcrumb';
 import { cn } from '../lib/utils';
 import {
-  AGENDA, FOCUS_TIME, PREPARED_FOR_YOU, WAITING_ON_YOU,
-  hhmm, todayLabel, type AgendaEvent,
-} from '../features/dashboard/data';
+  hhmm, todayLabel, type AgendaEvent, type BriefingParagraph,
+} from '../features/dashboard/view';
+import { useWorkspace } from '../lib/workspace';
 
 const SectionTitle = ({ children }: { children: ReactNode }) => (
   <p className="mb-4 font-sans text-[15px] font-semibold text-app-text">{children}</p>
@@ -85,7 +85,35 @@ function AgendaRow({ event, index }: { event: AgendaEvent; index: number }) {
   );
 }
 
+/**
+ * The narrative, rendered from runs rather than written as markup.
+ *
+ * Segments are emitted directly into the paragraph instead of being wrapped in
+ * spans, so the prose wraps exactly as a single run of text would.
+ */
+function Briefing({ paragraphs }: { paragraphs: BriefingParagraph[] }) {
+  return (
+    <div className="space-y-4 text-[15px] leading-[1.8] text-app-text/80">
+      {paragraphs.map((segments, p) => (
+        <p key={p}>
+          {segments.map((seg, i) =>
+            'ref' in seg ? (
+              <Ref key={i} color={seg.color}>{seg.ref}</Ref>
+            ) : (
+              seg.text
+            ),
+          )}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export default function Dashboard() {
+  const {
+    waitingOnYou, preparedForYou, agenda, briefing, focusTime,
+  } = useWorkspace().dashboard;
+
   return (
     <div className="flex h-full flex-col">
       <div className="shrink-0 px-5 pt-4">
@@ -98,38 +126,18 @@ export default function Dashboard() {
             <p className="font-sans text-[22px] font-semibold text-app-text">{todayLabel()}</p>
             <span className="flex items-center gap-1.5 text-[11px] text-app-muted">
               <Clock className="h-3.5 w-3.5" />
-              {FOCUS_TIME}
+              {focusTime}
             </span>
           </div>
 
-          {/* The narrative: what matters today, with the goals and tasks it
-              refers to linked inline rather than listed separately. */}
-          <div className="space-y-4 text-[15px] leading-[1.8] text-app-text/80">
-            <p>
-              Northwind is the only thing on this week's critical path.{' '}
-              <Ref>Finalize the Northwind pricing proposal</Ref> is due today, and nothing else on{' '}
-              <Ref color="#60a5fa">Q3 revenue push</Ref> can move before those numbers are signed
-              off. Sarah Kim has had the master agreement waiting on your countersignature since
-              yesterday.
-            </p>
-            <p>
-              <Ref color="#60a5fa">EU market expansion</Ref> hangs on one decision:{' '}
-              <Ref>Review the Munich office lease</Ref> is due in two days, the broker is on the
-              phone about it this afternoon, and that call is hard to reverse once the lease is
-              countersigned.
-            </p>
-            <p>
-              You closed <Ref>Website relaunch brief</Ref> yesterday, and Daniel Ross has taken the
-              compliance paperwork off your plate.{' '}
-              <Ref color="#60a5fa">Hiring: senior engineers</Ref> still has no tasks on it at all —
-              it will not move on its own.
-            </p>
-          </div>
+          {/* What matters today, with the goals and tasks it refers to linked
+              inline rather than listed separately. */}
+          <Briefing paragraphs={briefing} />
 
           <section className="mt-10">
             <SectionTitle>Waiting on you</SectionTitle>
             <div className="overflow-hidden rounded-[10px] border border-app-border">
-              {WAITING_ON_YOU.map((item, i) => (
+              {waitingOnYou.map((item, i) => (
                 <div
                   key={item.initials}
                   className={cn(
@@ -162,7 +170,7 @@ export default function Dashboard() {
           <section className="mt-10">
             <SectionTitle>Prepared for you</SectionTitle>
             <div className="space-y-3">
-              {PREPARED_FOR_YOU.map((item) => (
+              {preparedForYou.map((item) => (
                 <div
                   key={item.title}
                   className="rounded-[10px] border border-app-border bg-app-sunken p-4"
@@ -184,7 +192,7 @@ export default function Dashboard() {
           <section className="mt-10 pb-4">
             <SectionTitle>The rest of the day</SectionTitle>
             <div className="rounded-[10px] border border-app-border p-2">
-              {AGENDA.map((event, i) => (
+              {agenda.map((event, i) => (
                 <AgendaRow key={event.id} event={event} index={i} />
               ))}
             </div>

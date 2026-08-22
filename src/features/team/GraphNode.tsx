@@ -1,9 +1,10 @@
 import {
   FONT, GOAL_FILL, GOAL_FILL_ACTIVE, TASK_FILL, TASK_FILL_ACTIVE,
   STROKE_IDLE, STROKE_ACTIVE, OVERDUE, OVERDUE_STROKE,
-  initials, isOverdue, nodeMeta,
+  isOverdue, nodeMeta,
   type GoalNode, type TaskNode,
-} from './data';
+} from './view';
+import { initials } from '../../lib/utils';
 import type { Point } from './geometry';
 
 /** Overlapping initial-avatars, capped at three. */

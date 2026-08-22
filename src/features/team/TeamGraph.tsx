@@ -3,15 +3,29 @@ import { SidePanel } from './SidePanel';
 import { GraphNodeBox } from './GraphNode';
 import { bounds, clamp, edgePath, type Point } from './geometry';
 import {
-  EDGES, FONT, GOALS, MEMBERS, MIN_ZOOM, MAX_ZOOM,
+  FONT, MIN_ZOOM, MAX_ZOOM,
   EDGE, EDGE_DIM, EDGE_SHARED, OVERDUE, STROKE_ACTIVE,
-  initials, memberById,
-  type GraphNodeT,
-} from './data';
+  nodeKindIndex,
+  type GoalNode, type GraphNodeT, type MemberNode,
+} from './view';
+import { initials } from '../../lib/utils';
 
-const TOTAL_TASKS = GOALS.reduce((n, g) => n + g.tasks.length, 0);
-
-export function TeamGraph() {
+export function TeamGraph({
+  members, goals, edges,
+}: {
+  members: MemberNode[];
+  goals: GoalNode[];
+  edges: [string, string][];
+}) {
+  const totalTasks = useMemo(
+    () => goals.reduce((n, g) => n + g.tasks.length, 0),
+    [goals],
+  );
+  /* Was a module-level `memberById` that scanned the constant array. The
+     roster now arrives per session, so the index is built from what was
+     fetched. */
+  const memberOf = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
+  const kindById = useMemo(() => nodeKindIndex(members, goals), [members, goals]);
   const hostRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [activeGoal, setActiveGoal] = useState<string | null>('g1');
@@ -48,15 +62,15 @@ export function TeamGraph() {
   /** Tasks are hidden until their goal (or their owner) is the active node. */
   const visibleTasks = useMemo(() => {
     const set = new Set<string>();
-    GOALS.forEach((g) =>
+    goals.forEach((g) =>
       g.tasks.forEach((t) => {
         if (activeGoal === g.id || activeGoal === t.members[0]) set.add(t.id);
       }),
     );
     return set;
-  }, [activeGoal]);
+  }, [goals, activeGoal]);
 
-  const hiddenTasks = TOTAL_TASKS - visibleTasks.size;
+  const hiddenTasks = totalTasks - visibleTasks.size;
 
   /** Undirected adjacency: member↔goal, goal↔task, and task↔its owner. */
   const neighbours = useMemo(() => {
@@ -69,8 +83,8 @@ export function TeamGraph() {
       map.get(a)!.add(b);
       map.get(b)!.add(a);
     };
-    EDGES.forEach(([m, g]) => link(m, g));
-    GOALS.forEach((g) => {
+    edges.forEach(([m, g]) => link(m, g));
+    goals.forEach((g) => {
       seed(g.id);
       g.tasks.forEach((t) => {
         link(g.id, t.id);
@@ -78,7 +92,7 @@ export function TeamGraph() {
       });
     });
     return map;
-  }, []);
+  }, [edges, goals]);
 
   const selectedSet = selected ? neighbours.get(selected) ?? null : null;
   const isNeighbour = (id: string) => !selectedSet || selectedSet.has(id);
@@ -103,8 +117,8 @@ export function TeamGraph() {
   };
 
   const allNodes = useMemo<GraphNodeT[]>(
-    () => [...MEMBERS, ...GOALS, ...GOALS.flatMap((g) => g.tasks)],
-    [],
+    () => [...members, ...goals, ...goals.flatMap((g) => g.tasks)],
+    [members, goals],
   );
   const nodeById = useMemo(() => new Map(allNodes.map((n) => [n.id, n])), [allNodes]);
   const selectedNode = selected ? nodeById.get(selected) ?? null : null;
@@ -112,9 +126,9 @@ export function TeamGraph() {
   const fit = () => {
     if (!size.width || !size.height) return;
     const nodes = [
-      ...MEMBERS,
-      ...GOALS,
-      ...GOALS.flatMap((g) => g.tasks.filter((t) => visibleTasks.has(t.id))),
+      ...members,
+      ...goals,
+      ...goals.flatMap((g) => g.tasks.filter((t) => visibleTasks.has(t.id))),
     ];
     const b = bounds(nodes, posOf);
     const pad = 80;
@@ -217,36 +231,36 @@ export function TeamGraph() {
         style={{ display: 'block', cursor: 'grab', fontFamily: FONT }}
       >
         <g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>
-          {EDGES.map(([m, gid]) => {
-            const goal = GOALS.find((g) => g.id === gid)!;
+          {edges.map(([m, gid]) => {
+            const goal = goals.find((g) => g.id === gid)!;
             return (
               <path
                 key={`${m}-${gid}`}
-                d={between(memberById(m), goal)}
+                d={between(memberOf.get(m), goal)}
                 fill="none"
                 {...edgeStyle(m, gid, goal.people.length > 1)}
               />
             );
           })}
 
-          {GOALS.map((g) =>
+          {goals.map((g) =>
             g.tasks.filter((t) => visibleTasks.has(t.id)).map((t) => (
               <path key={`${g.id}-${t.id}`} d={between(g, t)} fill="none" {...edgeStyle(g.id, t.id)} />
             )),
           )}
 
-          {GOALS.map((g) =>
+          {goals.map((g) =>
             g.tasks.filter((t) => visibleTasks.has(t.id)).map((t) => (
               <path
                 key={`o-${t.id}`}
-                d={between(memberById(t.members[0]), t)}
+                d={between(memberOf.get(t.members[0]), t)}
                 fill="none"
                 {...edgeStyle(t.members[0], t.id)}
               />
             )),
           )}
 
-          {MEMBERS.map((m) => {
+          {members.map((m) => {
             const p = posOf(m);
             return (
               <g
@@ -308,7 +322,7 @@ export function TeamGraph() {
             );
           })}
 
-          {GOALS.map((g) => (
+          {goals.map((g) => (
             <g key={g.id}>
               <g
                 onPointerDown={(e) => startNodeDrag(e, g)}
@@ -337,6 +351,9 @@ export function TeamGraph() {
       {selectedNode && (
         <SidePanel
           node={selectedNode}
+          members={members}
+          edges={edges}
+          kindById={kindById}
           neighbours={neighbours}
           nodeById={nodeById}
           onClose={() => setSelected(null)}

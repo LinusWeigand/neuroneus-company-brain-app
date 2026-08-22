@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ChevronsUpDown, Info, LogOut, PanelLeft, Settings } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { NAV, WORKSPACE } from '../lib/nav';
+import { cn, initials } from '../lib/utils';
+import { NAV, PRODUCT_NAME } from '../lib/nav';
 import { useAuth } from '../lib/auth';
+import { useWorkspaceState } from '../lib/workspace';
 import { OrakisMark } from './OrakisMark';
 
 const EXPANDED = 248;
@@ -21,14 +22,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
 
-  /* Initials from the signed-in name rather than a fixed string, so the
-     footer reflects whoever is actually logged in. */
-  const initials = (user?.name ?? '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('');
+  /* The shell renders beside the loading spinner rather than behind it, so it
+     reads the workspace state instead of the workspace: the chrome appears at
+     once and the name fills in when the fetch lands. */
+  const { data } = useWorkspaceState();
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-app-bg text-app-text">
@@ -61,10 +58,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <div className="min-w-0 flex-1 text-left">
                 <span className="block whitespace-nowrap font-orbitron text-base font-extrabold uppercase leading-tight tracking-widest text-app-text">
-                  {WORKSPACE.org}
+                  {PRODUCT_NAME}
                 </span>
                 <span className="block truncate text-[11px] leading-tight text-app-text/60">
-                  {WORKSPACE.name}
+                  {data?.name ?? ''}
                 </span>
               </div>
               <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-app-muted" />
@@ -104,7 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           >
             <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-app-text text-[10px] font-semibold text-[#121212]">
-              {initials}
+              {initials(user?.name ?? '')}
             </span>
             {!collapsed && (
               <span className="min-w-0 flex-1 text-left">

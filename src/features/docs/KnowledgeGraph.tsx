@@ -1,16 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY,
   type Simulation, type SimulationLinkDatum, type SimulationNodeDatum,
 } from 'd3-force';
 import {
-  GRAPH, clusterCenter, nodeRadius, typeInfo,
+  clusterCenter, nodeRadius, typeInfo,
   type GraphLink, type GraphNode,
-} from './data';
+} from './view';
+
+export type Graph = { nodes: GraphNode[]; links: GraphLink[] };
 
 /**
  * d3 mutates the nodes it is given (writing x/y/vx/vy), so the simulation gets
- * its own copies and the pristine GRAPH arrays stay usable for rendering.
+ * its own copies and the pristine graph arrays stay usable for rendering.
  */
 type SimNode = GraphNode & SimulationNodeDatum;
 type SimLink = SimulationLinkDatum<SimNode> & { kind: GraphLink['kind'] };
@@ -30,19 +32,24 @@ function createSimulation(nodes: SimNode[], links: SimLink[]): Simulation<SimNod
 const round = (n: number) => Math.round(n * 100) / 100;
 
 /**
- * Settled layout, computed once at module load.
+ * Settled layout for a graph.
  *
  * Without this the graph would visibly fly apart from its seed positions on
  * every mount. Running the simulation to rest up front means it appears already
  * organised, and the live simulation only has to react to dragging.
+ *
+ * This used to run once at module load, when the entries were a compile-time
+ * constant. They now arrive over the network, so it runs once per graph inside
+ * a useMemo instead — same 600 ticks, same result, just no longer at import
+ * time.
  */
-const LAYOUT = (() => {
-  const nodes: SimNode[] = GRAPH.nodes.map((n, i) => ({
+function settle(graph: Graph) {
+  const nodes: SimNode[] = graph.nodes.map((n, i) => ({
     ...n,
     x: Math.cos(i) * 140,
     y: Math.sin(i) * 140,
   }));
-  const sim = createSimulation(nodes, GRAPH.links.map((l) => ({ ...l }))).stop();
+  const sim = createSimulation(nodes, graph.links.map((l) => ({ ...l }))).stop();
   for (let i = 0; i < 600 && sim.alpha() >= sim.alphaMin(); i++) sim.tick();
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -58,9 +65,10 @@ const LAYOUT = (() => {
     pos: new Map(nodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }])),
     view: `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`,
   };
-})();
+}
 
-export function KnowledgeGraph() {
+export function KnowledgeGraph({ graph }: { graph: Graph }) {
+  const layout = useMemo(() => settle(graph), [graph]);
   const hostRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const simRef = useRef<Simulation<SimNode, SimLink> | null>(null);
@@ -69,19 +77,20 @@ export function KnowledgeGraph() {
 
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
   const [nodes, setNodes] = useState<SimNode[]>(() =>
-    GRAPH.nodes.map((n) => ({ ...n, ...LAYOUT.pos.get(n.id) })),
+    graph.nodes.map((n) => ({ ...n, ...layout.pos.get(n.id) })),
   );
 
   useEffect(() => {
-    const live: SimNode[] = GRAPH.nodes.map((n) => ({ ...n, ...LAYOUT.pos.get(n.id) }));
-    const sim = createSimulation(live, GRAPH.links.map((l) => ({ ...l })))
+    const live: SimNode[] = graph.nodes.map((n) => ({ ...n, ...layout.pos.get(n.id) }));
+    setNodes(live.map((n) => ({ ...n })));
+    const sim = createSimulation(live, graph.links.map((l) => ({ ...l })))
       .on('tick', () => setNodes(live.map((n) => ({ ...n }))));
     // Start parked: the layout is already settled, so it only runs while dragging.
     sim.stop();
     simRef.current = sim;
     nodesRef.current = live;
     return () => { sim.stop(); };
-  }, []);
+  }, [graph, layout]);
 
   /** Screen pixels -> SVG user units, which viewBox scaling makes non-trivial. */
   const toSvgPoint = (clientX: number, clientY: number) => {
@@ -147,8 +156,8 @@ export function KnowledgeGraph() {
 
   return (
     <div ref={hostRef} className="relative h-full rounded-lg border border-[#3D3D3D]">
-      <svg ref={svgRef} viewBox={LAYOUT.view} preserveAspectRatio="xMidYMid meet" className="h-full w-full">
-        {GRAPH.links.map((link, i) => {
+      <svg ref={svgRef} viewBox={layout.view} preserveAspectRatio="xMidYMid meet" className="h-full w-full">
+        {graph.links.map((link, i) => {
           const a = byId.get(link.source);
           const b = byId.get(link.target);
           if (!a || !b) return null;

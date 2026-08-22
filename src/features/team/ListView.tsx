@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { ChevronRight, Clock } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, initials } from '../../lib/utils';
 import {
-  LIST_MEMBERS, PRIORITY_STYLE, STATUS_STYLE,
-  formatDay, initials,
+  PRIORITY_STYLE, STATUS_STYLE,
+  formatDay,
   type ListMember,
-} from './data';
+} from './view';
 
 const TH = 'py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-[#8C8C8C]/60';
 
 /** Roster table. A whole row is the click target, not just the name. */
 export function MemberTable({
-  selectedId, onSelect,
+  rows, selectedId, onSelect,
 }: {
+  rows: ListMember[];
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
@@ -30,13 +31,13 @@ export function MemberTable({
             </tr>
           </thead>
           <tbody>
-            {LIST_MEMBERS.map((m, i) => (
+            {rows.map((m, i) => (
               <tr
                 key={m.name}
                 onClick={() => onSelect(m.id)}
                 className={cn(
                   'cursor-pointer transition-colors duration-150',
-                  i < LIST_MEMBERS.length - 1 && 'border-b border-[#3D3D3B]',
+                  i < rows.length - 1 && 'border-b border-[#3D3D3B]',
                   selectedId === m.id ? 'bg-white/5' : 'hover:bg-white/[0.02]',
                 )}
               >

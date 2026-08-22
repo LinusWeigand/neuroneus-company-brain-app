@@ -1,6 +1,9 @@
 import { Route, Routes } from 'react-router-dom';
 import { Atom, CalendarRange, Inbox } from 'lucide-react';
 import { AppShell } from './components/AppShell';
+import { OrakisMark } from './components/OrakisMark';
+import Login from './pages/Login';
+import { useAuth } from './lib/auth';
 import { ComingSoon } from './components/ComingSoon';
 import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
@@ -8,6 +11,21 @@ import Team from './pages/Team';
 import Docs from './pages/Docs';
 
 export default function App() {
+  const { user } = useAuth();
+
+  /* undefined means the session check has not come back yet. Rendering the
+     login screen during that window would flash it at people who are already
+     signed in, so hold on a splash instead. */
+  if (user === undefined) {
+    return (
+      <div className="flex h-full items-center justify-center bg-app-bg">
+        <OrakisMark size={28} className="animate-spinMark text-app-muted" />
+      </div>
+    );
+  }
+
+  if (user === null) return <Login />;
+
   return (
     <AppShell>
       <Routes>

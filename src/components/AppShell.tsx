@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChevronsUpDown, Info, PanelLeft, Settings } from 'lucide-react';
+import { ChevronsUpDown, Info, LogOut, PanelLeft, Settings } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { NAV, USER, WORKSPACE } from '../lib/nav';
+import { NAV, WORKSPACE } from '../lib/nav';
+import { useAuth } from '../lib/auth';
 import { OrakisMark } from './OrakisMark';
 
 const EXPANDED = 248;
@@ -18,6 +19,16 @@ const COLLAPSED = 58;
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { user, signOut } = useAuth();
+
+  /* Initials from the signed-in name rather than a fixed string, so the
+     footer reflects whoever is actually logged in. */
+  const initials = (user?.name ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join('');
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-app-bg text-app-text">
@@ -84,28 +95,39 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="border-t border-app-border-soft p-2">
+        <div className="flex items-center gap-1 border-t border-app-border-soft p-2">
           <button
             type="button"
             className={cn(
-              'flex w-full items-center gap-2 rounded-[6px] p-1.5 transition-colors hover:bg-white/10',
+              'flex min-w-0 flex-1 items-center gap-2 rounded-[6px] p-1.5 transition-colors hover:bg-white/10',
               collapsed && 'justify-center',
             )}
           >
             <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-app-text text-[10px] font-semibold text-[#121212]">
-              {USER.initials}
+              {initials}
             </span>
             {!collapsed && (
               <span className="min-w-0 flex-1 text-left">
                 <span className="block truncate text-[13px] leading-tight text-app-text">
-                  {USER.name}
+                  {user?.name}
                 </span>
                 <span className="block truncate text-[11px] leading-tight text-app-muted">
-                  {USER.email}
+                  {user?.email}
                 </span>
               </span>
             )}
           </button>
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              aria-label="Sign out"
+              title="Sign out"
+              className="flex size-7 shrink-0 items-center justify-center rounded-[6px] text-app-muted transition-colors hover:bg-white/10 hover:text-app-text"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </aside>
 

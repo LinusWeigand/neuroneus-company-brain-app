@@ -32,12 +32,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       where created_at < now() - make_interval(mins => ${WINDOW_MINUTES})
     `;
     const recent = (await sql`
-      select count(*)::int as n from app_login_attempt where client_hash = ${who}
+      select count(*)::int as n from app_login_attempt
+      where client_hash = ${who} and kind = 'login'
     `) as { n: number }[];
     if ((recent[0]?.n ?? 0) >= MAX_ATTEMPTS) {
       return json(res, 429, { error: 'Too many attempts. Please try again in a few minutes.' });
     }
-    await sql`insert into app_login_attempt (client_hash) values (${who})`;
+    await sql`insert into app_login_attempt (client_hash, kind) values (${who}, 'login')`;
 
     const users = (await sql`
       select id, email, name, password_hash from app_user where email = ${email} limit 1
@@ -59,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       values (${user.id}, ${hashToken(token)}, now() + make_interval(days => ${SESSION_DAYS}))
     `;
     // Successful login clears the throttle for this caller.
-    await sql`delete from app_login_attempt where client_hash = ${who}`;
+    await sql`delete from app_login_attempt where client_hash = ${who} and kind = 'login'`;
 
     setSessionCookie(req, res, token);
     return json(res, 200, { user: { id: user.id, email: user.email, name: user.name } });

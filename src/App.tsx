@@ -1,8 +1,9 @@
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { Atom, CalendarRange, Inbox } from 'lucide-react';
 import { AppShell } from './components/AppShell';
 import { OrakisMark } from './components/OrakisMark';
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import { useAuth } from './lib/auth';
 import { ComingSoon } from './components/ComingSoon';
 import Dashboard from './pages/Dashboard';
@@ -12,6 +13,13 @@ import Docs from './pages/Docs';
 
 export default function App() {
   const { user } = useAuth();
+  const { pathname } = useLocation();
+
+  /* Reachable in every auth state, and checked before the session even
+     resolves. Signed-out people arrive here from an email link, and signed-in
+     people may be resetting precisely because they suspect someone else has
+     their password. */
+  if (pathname === '/reset') return <ResetPassword />;
 
   /* undefined means the session check has not come back yet. Rendering the
      login screen during that window would flash it at people who are already

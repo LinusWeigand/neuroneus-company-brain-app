@@ -45,8 +45,13 @@ create index if not exists app_session_expiry_idx on app_session (expires_at);
 create table if not exists app_login_attempt (
   id          bigint generated always as identity primary key,
   created_at  timestamptz not null default now(),
-  client_hash text not null
+  client_hash text not null,
+  -- Which throttle this row belongs to. Login and password-reset abuse are
+  -- counted separately: sharing a counter lets either one starve the other.
+  kind        text not null default 'login'
 );
+
+alter table app_login_attempt add column if not exists kind text not null default 'login';
 
 create index if not exists app_login_attempt_lookup_idx
   on app_login_attempt (client_hash, created_at desc);
@@ -73,3 +78,19 @@ create table if not exists app_oauth_identity (
 );
 
 create index if not exists app_oauth_identity_user_idx on app_oauth_identity (user_id);
+
+-- ---------------------------------------------------------------------------
+-- Password reset tokens
+-- ---------------------------------------------------------------------------
+-- Only a SHA-256 of the token is stored, so a database leak cannot be used to
+-- reset anyone's password. Rows are single-use (used_at) and short-lived.
+create table if not exists app_password_reset (
+  id         bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  user_id    bigint not null references app_user (id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  used_at    timestamptz
+);
+
+create index if not exists app_password_reset_user_idx on app_password_reset (user_id);

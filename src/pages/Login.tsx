@@ -1,13 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '../lib/auth';
-import { CONTACT_EMAIL, SIGN_UP_URL } from '../lib/config';
+import { AuthShell, ContactFooter, FIELD, LABEL, WHITE_BUTTON } from '../components/AuthShell';
+import { SIGN_UP_URL } from '../lib/config';
 import { cn } from '../lib/utils';
-
-const FIELD =
-  'h-11 w-full rounded-[6px] border border-white/10 bg-app-bg px-3 text-sm text-app-text outline-none transition-colors placeholder:text-app-muted/70 focus:border-white/25';
-const LABEL = 'text-[11px] font-medium uppercase tracking-wider text-app-muted';
-const WHITE_BUTTON =
-  'h-11 rounded-[6px] bg-white text-[#1a1a1a] text-sm font-medium transition-all duration-200 hover:bg-white/90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100';
 
 /** Brand marks for the federated options, drawn inline so no request is made. */
 const GoogleMark = () => (
@@ -40,12 +35,93 @@ const OAUTH_ERRORS: Record<string, string> = {
   oauth_failed: 'Sign-in failed. Please try again.',
 };
 
+/**
+ * Request a reset link. The response is deliberately identical whether or not
+ * the address has an account, so the wording never confirms one exists.
+ */
+function ForgotPassword({ onBack }: { onBack: () => void }) {
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch {
+      /* Even a network failure shows the same confirmation: reporting it
+         differently would leak whether the address was found. */
+    } finally {
+      setBusy(false);
+      setSent(true);
+    }
+  };
+
+  if (sent) {
+    return (
+      <AuthShell footer={<ContactFooter />}>
+        <h1 className="text-xl font-bold leading-snug text-white">Check your inbox</h1>
+        <p className="text-[13px] leading-relaxed text-app-muted">
+          If an account exists for {email || 'that address'}, a reset link is on its way. It
+          expires in an hour.
+        </p>
+        <button type="button" onClick={onBack} className={cn(WHITE_BUTTON, 'w-full')}>
+          Back to sign in
+        </button>
+      </AuthShell>
+    );
+  }
+
+  return (
+    <AuthShell footer={<ContactFooter />}>
+      <h1 className="text-xl font-bold leading-snug text-white">Reset your password</h1>
+      <p className="text-[13px] leading-relaxed text-app-muted">
+        Enter your email and we'll send you a link to choose a new password.
+      </p>
+
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <div className="space-y-1.5">
+          <label htmlFor="reset-email" className={LABEL}>Email</label>
+          <input
+            id="reset-email"
+            type="email"
+            autoComplete="username"
+            placeholder="name@example.com"
+            className={FIELD}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <button type="submit" disabled={busy} className={cn(WHITE_BUTTON, 'w-full')}>
+          {busy ? 'Sending…' : 'Send reset link'}
+        </button>
+      </form>
+
+      <button
+        type="button"
+        onClick={onBack}
+        className="text-[13px] text-app-muted transition-colors hover:text-app-text"
+      >
+        Back to sign in
+      </button>
+    </AuthShell>
+  );
+}
+
 export default function Login() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
 
   /* The OAuth callback reports failures by redirecting here with ?error=.
      Strip it from the URL once read, so a refresh does not resurrect it. */
@@ -71,16 +147,10 @@ export default function Login() {
     }
   };
 
-  return (
-    <div className="flex min-h-full items-center justify-center bg-app-bg px-6 py-12">
-      <div className="w-full max-w-[380px]">
-        <div className="mb-8 text-center">
-          <span className="font-orbitron text-2xl font-bold uppercase tracking-widest text-app-text">
-            Orakis
-          </span>
-        </div>
+  if (forgot) return <ForgotPassword onBack={() => setForgot(false)} />;
 
-        <div className="flex flex-col gap-5">
+  return (
+    <AuthShell footer={<ContactFooter />}>
           <h1 className="text-xl font-bold leading-snug text-white">Sign in</h1>
 
           {/* Federated sign-in is part of the original design but needs OAuth
@@ -130,9 +200,8 @@ export default function Login() {
                 <label htmlFor="password" className={LABEL}>Password</label>
                 <button
                   type="button"
-                  disabled
-                  title="Password reset is not set up yet"
-                  className="text-[11px] text-app-muted transition-colors hover:text-app-text disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => setForgot(true)}
+                  className="text-[11px] text-app-muted transition-colors hover:text-app-text"
                 >
                   Forgot password?
                 </button>
@@ -165,14 +234,6 @@ export default function Login() {
               Sign up
             </a>
           </p>
-        </div>
-
-        <p className="mt-8 text-center text-[12px] text-app-muted">
-          <a href={`mailto:${CONTACT_EMAIL}`} className="transition-colors hover:text-app-text">
-            Contact
-          </a>
-        </p>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

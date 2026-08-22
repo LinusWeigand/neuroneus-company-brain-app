@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '../lib/auth';
 import { CONTACT_EMAIL, SIGN_UP_URL } from '../lib/config';
 import { cn } from '../lib/utils';
@@ -28,12 +28,33 @@ const MicrosoftMark = () => (
   </svg>
 );
 
+/** Messages for the ?error= codes /api/auth/callback can redirect back with. */
+const OAUTH_ERRORS: Record<string, string> = {
+  no_account:
+    'No account found for that address. Contact us to request access.',
+  email_unverified:
+    'Your provider could not confirm that email address belongs to you. Sign in with your password instead.',
+  oauth_denied: 'Sign-in was cancelled.',
+  oauth_state: 'That sign-in attempt expired. Please try again.',
+  oauth_unavailable: 'That sign-in method is not available right now.',
+  oauth_failed: 'Sign-in failed. Please try again.',
+};
+
 export default function Login() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  /* The OAuth callback reports failures by redirecting here with ?error=.
+     Strip it from the URL once read, so a refresh does not resurrect it. */
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('error');
+    if (!code) return;
+    setError(OAUTH_ERRORS[code] ?? OAUTH_ERRORS.oauth_failed!);
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,24 +87,22 @@ export default function Login() {
               apps registered with each provider. Disabled until configured
               rather than hidden, so the option is visibly coming. */}
           <div className="flex gap-3">
-            <button
-              type="button"
-              disabled
-              title="Google sign-in is not configured yet"
+            {/* A full navigation, not fetch: the provider redirects the browser
+                back to our callback, which sets the session cookie. */}
+            <a
+              href="/api/auth/start/google"
               className={cn(WHITE_BUTTON, 'flex flex-1 items-center justify-center gap-2')}
             >
               <GoogleMark />
               Google
-            </button>
-            <button
-              type="button"
-              disabled
-              title="Microsoft sign-in is not configured yet"
+            </a>
+            <a
+              href="/api/auth/start/microsoft"
               className={cn(WHITE_BUTTON, 'flex flex-1 items-center justify-center gap-2')}
             >
               <MicrosoftMark />
               Microsoft
-            </button>
+            </a>
           </div>
 
           <div className="flex items-center gap-3">

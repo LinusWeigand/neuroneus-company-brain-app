@@ -50,3 +50,26 @@ create table if not exists app_login_attempt (
 
 create index if not exists app_login_attempt_lookup_idx
   on app_login_attempt (client_hash, created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- Linked OAuth identities
+-- ---------------------------------------------------------------------------
+-- One row per provider identity bound to an account. Matching happens on the
+-- provider's immutable subject, never on email: with a multitenant Microsoft
+-- app anyone can assert an arbitrary email, so email is only ever used once,
+-- to create this link, and only when the provider vouches it is verified.
+--
+-- `tenant` is Microsoft's tid ('' for Google). Kept NOT NULL with an empty
+-- default because Postgres treats NULLs as distinct in unique constraints,
+-- which would let duplicate links slip in.
+create table if not exists app_oauth_identity (
+  id         bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  user_id    bigint not null references app_user (id) on delete cascade,
+  provider   text not null,
+  subject    text not null,
+  tenant     text not null default '',
+  unique (provider, subject, tenant)
+);
+
+create index if not exists app_oauth_identity_user_idx on app_oauth_identity (user_id);

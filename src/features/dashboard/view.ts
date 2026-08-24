@@ -22,7 +22,7 @@ export type WaitingItem = {
   overdue: boolean;
 };
 
-/** Suggestions Ora has drafted. `canBeDone` decides whether "Done" is offered:
+/** Suggestions Neuron has drafted. `canBeDone` decides whether "Done" is offered:
  *  some suggestions are actions to take, others are only worth discussing. */
 export type PreparedItem = { title: string; body: string; canBeDone: boolean };
 
@@ -53,3 +53,34 @@ export type BriefingSegment =
   | { person: string };
 
 export type BriefingParagraph = BriefingSegment[];
+
+/**
+ * Stripe colours for agenda rows.
+ *
+ * The class literals live here, in client source Tailwind scans, and the data
+ * carries only the token name. Putting the class in the data instead would
+ * work until the content moved — Tailwind never sees `api/`, so the classes
+ * were silently dropped from the stylesheet and every stripe rendered blank.
+ */
+export const AGENDA_COLORS: Record<string, string> = {
+  blue: 'bg-blue-500',
+  purple: 'bg-purple-500',
+  green: 'bg-green-500',
+  orange: 'bg-orange-500',
+};
+
+export const agendaColor = (token?: string) =>
+  AGENDA_COLORS[token ?? ''] ?? 'bg-app-border';
+
+/**
+ * Gap above an agenda row, in pixels.
+ *
+ * The column reads as a timeline: rows drift apart when the day does. A third
+ * of the idle minutes, capped so a long afternoon gap cannot push the evening
+ * off the screen, plus a constant so back-to-back events still separate.
+ */
+export function agendaOffset(event: AgendaEvent, previous?: AgendaEvent) {
+  if (!previous) return 0;
+  const idle = Math.max(0, (event.start - (previous.end ?? previous.start)) / 60_000);
+  return Math.min(Math.round(idle / 3), 44) + 6;
+}

@@ -56,12 +56,12 @@ export default function AuthedApp() {
                 }
               />
               <Route
-                path="/ora"
+                path="/neuron"
                 element={
                   <ComingSoon
                     Icon={Atom}
-                    section="Ora"
-                    page="Ora"
+                    section="Neuron"
+                    page="Neuron"
                     note="The assistant. Needs a backend before it can answer anything real."
                   />
                 }

@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { Check, ChevronDown, Clock, House, MessageSquare, X } from 'lucide-react';
+import { Check, ChevronDown, Clock, House, MessageSquare, Trash2 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { cn, initials } from '../lib/utils';
 import {
-  hhmm, todayLabel, type AgendaEvent, type BriefingParagraph,
+  agendaColor, agendaOffset, hhmm, todayLabel,
+  type AgendaEvent, type BriefingParagraph,
 } from '../features/dashboard/view';
 import { useWorkspace } from '../lib/workspace';
 
@@ -12,7 +13,7 @@ const SectionTitle = ({ children }: { children: ReactNode }) => (
 );
 
 const Avatar = ({ initials }: { initials: string }) => (
-  <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full border border-app-border bg-app-bg text-[8px] font-semibold text-app-text/80">
+  <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-app-text text-[9px] font-semibold text-[#121212]">
     {initials}
   </span>
 );
@@ -54,44 +55,59 @@ const ActionButton = ({ icon: Icon, children }: { icon: typeof Check; children: 
   </button>
 );
 
-/** One agenda row. Clicking a row with detail expands it in place. */
-function AgendaRow({ event, index }: { event: AgendaEvent; index: number }) {
+/**
+ * One agenda row. Clicking a row with detail expands it in place; rows with
+ * nothing behind them are inert and say so by not offering a chevron.
+ */
+function AgendaRow({ event, previous }: { event: AgendaEvent; previous?: AgendaEvent }) {
   const [open, setOpen] = useState(false);
   const expandable = !!(event.description || event.goal || event.task);
 
   return (
-    <div style={{ marginTop: index === 0 ? 0 : 10 }}>
+    <div style={{ marginTop: agendaOffset(event, previous) }}>
       <button
         type="button"
         onClick={expandable ? () => setOpen((v) => !v) : undefined}
         className={cn(
-          'flex w-full items-center gap-3 rounded-[6px] px-2 py-1.5 text-left transition-colors',
-          expandable ? 'cursor-pointer hover:bg-white/5' : 'cursor-default',
+          'group flex w-full items-start gap-3 text-left',
+          !expandable && 'cursor-default',
         )}
       >
-        <span className="w-[115px] shrink-0 text-[13px] tabular-nums text-app-muted">
+        <span className="w-[104px] shrink-0 text-[13px] font-medium leading-[22px] tabular-nums text-app-muted">
           {hhmm(event.start)}
           {event.end ? ` – ${hhmm(event.end)}` : ''}
         </span>
-        <span className={cn('h-3.5 w-1 shrink-0 rounded-full', event.color ?? 'bg-app-border')} />
-        <span className="min-w-0 flex-1 truncate text-[13px] text-app-text">{event.title}</span>
-        {expandable && (
-          <ChevronDown
-            className={cn(
-              'h-3.5 w-3.5 shrink-0 text-app-muted transition-transform',
-              open && 'rotate-180',
-            )}
-          />
-        )}
+        <span
+          className={cn('mt-[3px] h-4 w-[3px] shrink-0 rounded-full', agendaColor(event.color))}
+        />
+        <span
+          className={cn(
+            'min-w-0 flex-1 truncate text-[14px] leading-[22px] text-app-text/85 transition-colors',
+            expandable && 'group-hover:text-app-text',
+          )}
+        >
+          {event.title}
+        </span>
+        {/* Reserved whether or not a chevron is drawn, so titles line up. */}
+        <span className="w-4 shrink-0 pt-[3px]">
+          {expandable && (
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 text-app-muted/50 transition-transform',
+                open && 'rotate-180',
+              )}
+            />
+          )}
+        </span>
       </button>
 
       {open && (
         <div className="ml-[131px] mt-2 flex flex-col items-start gap-2">
           {event.description && (
-            <p className="text-[12px] leading-relaxed text-app-muted">{event.description}</p>
+            <p className="text-[14px] leading-relaxed text-app-muted">{event.description}</p>
           )}
           {(event.goal || event.task) && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex max-w-full flex-col items-start gap-1.5 text-[14px]">
               {event.goal && <GoalRef title={event.goal.title} color={event.goal.color} />}
               {event.task && <TaskRef title={event.task} />}
             </div>
@@ -140,8 +156,8 @@ export default function Dashboard() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-7 flex items-center justify-between gap-4">
             <p className="font-sans text-[22px] font-semibold text-app-text">{todayLabel()}</p>
-            <span className="flex items-center gap-1.5 text-[11px] text-app-muted">
-              <Clock className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-1.5 text-[11px] text-app-muted/40">
+              <Clock className="h-3 w-3" />
               {focusTime}
             </span>
           </div>
@@ -150,66 +166,68 @@ export default function Dashboard() {
               inline rather than listed separately. */}
           <Briefing paragraphs={briefing} />
 
-          <section className="mt-10">
+          <section className="mt-14">
             <SectionTitle>Waiting on you</SectionTitle>
-            <div className="overflow-hidden rounded-[10px] border border-app-border">
-              {waitingOnYou.map((item, i) => (
-                <div
-                  key={item.initials}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3',
-                    i > 0 && 'border-t border-app-border-soft',
-                  )}
-                >
+            <div className="flex flex-col">
+              {waitingOnYou.map((item) => (
+                <div key={item.initials} className="flex items-center gap-3 py-2.5">
                   <Avatar initials={item.initials} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] text-app-text">{item.title}</p>
-                    <p className="text-[12px] text-app-muted">{item.from} asked for your review</p>
+                    <p className="truncate text-[14px] text-app-text/85">{item.title}</p>
+                    <p className="mt-0.5 text-[13px] text-app-muted/60">
+                      {item.from} asked for your review
+                    </p>
                   </div>
-                  {item.due && (
-                    <span
-                      className={cn(
-                        'flex shrink-0 items-center gap-1 text-[11px]',
-                        item.overdue ? 'font-medium text-red-400' : 'text-app-muted',
-                      )}
-                    >
-                      <Clock className="h-3 w-3" />
-                      {item.due}
-                    </span>
-                  )}
-                  <ActionButton icon={Check}>Review</ActionButton>
+                  {/* Fixed width whether or not a deadline is shown, so the
+                      Review buttons stay in one column. */}
+                  <span className="flex w-[185px] shrink-0 items-baseline justify-end gap-1.5 text-[13px]">
+                    {item.overdue && item.due && (
+                      <>
+                        <span className="text-app-muted">task deadline</span>
+                        <span className="font-medium text-red-400">{item.due}</span>
+                      </>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 shrink-0 cursor-pointer items-center rounded-[6px] border border-app-border bg-app-bg px-3 text-[13px] font-medium text-app-text shadow-sm shadow-black/5 transition-colors hover:bg-app-text/10"
+                  >
+                    Review
+                  </button>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="mt-10">
+          <section className="mt-14">
             <SectionTitle>Prepared for you</SectionTitle>
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               {preparedForYou.map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-[10px] border border-app-border bg-app-sunken p-4"
+                  className="rounded-xl border border-app-border bg-app-panel p-4"
                 >
-                  <p className="text-[13px] font-medium text-app-text">{item.title}</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-app-muted">{item.body}</p>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <h5 className="mb-1 font-sans text-[14px] font-semibold text-app-text">
+                    {item.title}
+                  </h5>
+                  <p className="text-[14px] leading-relaxed text-app-text/85">{item.body}</p>
+                  <div className="mt-3.5 flex items-center gap-2">
                     {/* "Done" only appears where the suggestion is an action
                         that can actually be completed. */}
                     {item.canBeDone && <ActionButton icon={Check}>Done</ActionButton>}
                     <ActionButton icon={MessageSquare}>Discuss</ActionButton>
-                    <ActionButton icon={X}>Discard</ActionButton>
+                    <ActionButton icon={Trash2}>Discard</ActionButton>
                   </div>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="mt-10 pb-4">
+          <section className="mt-14 pb-4">
             <SectionTitle>The rest of the day</SectionTitle>
-            <div className="rounded-[10px] border border-app-border p-2">
+            <div className="flex flex-col">
               {agenda.map((event, i) => (
-                <AgendaRow key={event.id} event={event} index={i} />
+                <AgendaRow key={event.id} event={event} previous={agenda[i - 1]} />
               ))}
             </div>
           </section>

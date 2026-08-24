@@ -48,7 +48,7 @@ export const WAITING_ON_YOU = [
   },
 ];
 
-/** Suggestions Ora has drafted. */
+/** Suggestions Neuron has drafted. */
 export const PREPARED_FOR_YOU = [
   {
     title: 'Chase Northwind on the master agreement',
@@ -68,16 +68,16 @@ export const AGENDA = [
     id: 'e1',
     start: hhmmToday(9, 30),
     end: hhmmToday(10, 30),
-    color: 'bg-blue-500',
+    color: 'blue',
     title: 'Client meeting: Northwind',
     description: 'Walk through the revised pricing tiers and close the open questions.',
     task: 'Finalize the Northwind pricing proposal',
   },
-  { id: 'e2', start: hhmmToday(10, 30), end: hhmmToday(11, 15), color: 'bg-purple-500', title: 'Weekly partner sync' },
+  { id: 'e2', start: hhmmToday(10, 30), end: hhmmToday(11, 15), color: 'purple', title: 'Weekly partner sync' },
   {
     id: 'e3',
     start: hhmmToday(13, 30),
-    color: 'bg-green-500',
+    color: 'green',
     title: 'Call: broker on the Munich office',
     description: 'Square metres and the rent ladder — she wants an answer in the next couple of days.',
     goal: { title: 'EU market expansion', color: '#60a5fa' },
@@ -87,7 +87,7 @@ export const AGENDA = [
     id: 'e4',
     start: hhmmToday(15, 0),
     end: hhmmToday(16, 30),
-    color: 'bg-orange-500',
+    color: 'orange',
     title: 'Contract call: Ardent',
     goal: { title: 'Q3 revenue push', color: '#60a5fa' },
   },

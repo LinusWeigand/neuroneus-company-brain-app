@@ -5,7 +5,7 @@ import { cn, initials } from '../lib/utils';
 import { NAV, PRODUCT_NAME } from '../lib/nav';
 import { useAuth } from '../lib/auth';
 import { useWorkspaceState } from '../lib/workspace';
-import { OrakisMark } from './OrakisMark';
+import { NeuroneusMark } from './NeuroneusMark';
 
 const EXPANDED = 248;
 const COLLAPSED = 58;
@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               collapsed ? 'h-8 p-0' : 'px-2 py-1.5',
             )}
           >
-            <OrakisMark
+            <NeuroneusMark
               size={24}
               className={cn(
                 'mx-auto shrink-0 text-app-text transition-opacity duration-200 ease-out',

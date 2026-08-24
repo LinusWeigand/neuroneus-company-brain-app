@@ -15,7 +15,7 @@ export function AuthShell({ children, footer }: { children: ReactNode; footer?: 
       <div className="w-full max-w-[380px]">
         <div className="mb-8 text-center">
           <span className="font-orbitron text-2xl font-bold uppercase tracking-widest text-app-text">
-            Orakis
+            Neuroneus
           </span>
         </div>
         <div className="flex flex-col gap-5">{children}</div>

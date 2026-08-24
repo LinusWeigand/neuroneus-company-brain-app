@@ -1,4 +1,4 @@
--- Orakis app schema (Neon Postgres).
+-- Neuroneus app schema (Neon Postgres).
 --
 --   psql "$DATABASE_URL" -f db/schema.sql
 --

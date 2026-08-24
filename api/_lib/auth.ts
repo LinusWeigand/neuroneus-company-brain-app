@@ -43,7 +43,7 @@ export async function burnTime(password: string): Promise<void> {
   await scrypt(password, randomBytes(16), KEY_LEN, SCRYPT);
 }
 
-export const SESSION_COOKIE = 'orakis_session';
+export const SESSION_COOKIE = 'neuroneus_session';
 export const SESSION_DAYS = 30;
 
 export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
@@ -56,7 +56,7 @@ export function clientHash(req: VercelRequest): string {
   const fwd = req.headers['x-forwarded-for'];
   const raw = Array.isArray(fwd) ? fwd[0] : fwd;
   const ip = (raw ?? '').split(',')[0]?.trim() || 'unknown';
-  const salt = process.env.THROTTLE_SALT ?? 'orakis-app-fallback-salt';
+  const salt = process.env.THROTTLE_SALT ?? 'neuroneus-app-fallback-salt';
   return createHash('sha256').update(`${salt}:${ip}`).digest('hex');
 }
 

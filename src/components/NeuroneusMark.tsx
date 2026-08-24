@@ -1,12 +1,12 @@
 import { useId } from 'react';
 
 /**
- * The Orakis octagon: a filled octagon with a mask punching out the inner
+ * The Neuroneus octagon: a filled octagon with a mask punching out the inner
  * octagon plus two opposing cuts, which is what gives the mark its rotated-S
  * negative space. The mask id must be unique per instance because the mark
  * renders more than once per screen.
  */
-export function OrakisMark({
+export function NeuroneusMark({
   size = 24,
   fill = 'currentColor',
   className,
@@ -15,7 +15,7 @@ export function OrakisMark({
   fill?: string;
   className?: string;
 }) {
-  const maskId = `orakis-mark-${useId()}`;
+  const maskId = `neuroneus-mark-${useId()}`;
   const outer = '32.4,7.76 67.6,7.76 92.24,32.4 92.24,67.6 67.6,92.24 32.4,92.24 7.76,67.6 7.76,32.4';
 
   return (

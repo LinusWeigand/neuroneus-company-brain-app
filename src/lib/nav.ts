@@ -10,9 +10,9 @@ export const NAV: NavItem[] = [
   { to: '/goals', label: 'Goals & Tasks', Icon: Layers },
   { to: '/team', label: 'Team', Icon: Users },
   { to: '/calendar', label: 'Calendar', Icon: CalendarRange },
-  { to: '/ora', label: 'Ora', Icon: Atom },
+  { to: '/neuron', label: 'Neuron', Icon: Atom },
 ];
 
 /** The product wordmark above the workspace name. This is branding, not
  *  customer data, so it is the one label here that stays in the bundle. */
-export const PRODUCT_NAME = 'Orakis';
+export const PRODUCT_NAME = 'Neuroneus';

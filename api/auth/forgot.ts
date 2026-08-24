@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const url = `${origin(req)}/reset?token=${encodeURIComponent(token)}`;
     const { text, html } = resetEmail(user.name, url, TTL_MINUTES);
-    await sendMail(user.email, 'Reset your Orakis password', text, html);
+    await sendMail(user.email, 'Reset your Neuroneus password', text, html);
 
     return ok();
   } catch (err) {

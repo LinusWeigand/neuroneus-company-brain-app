@@ -9,7 +9,7 @@ const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 
 export function mailFrom(): string {
   // Must be an address at a domain verified in Resend, or the API rejects it.
-  return process.env.MAIL_FROM ?? 'Orakis <noreply@neuron.eus>';
+  return process.env.MAIL_FROM ?? 'Neuroneus <noreply@neuron.eus>';
 }
 
 export async function sendMail(to: string, subject: string, text: string, html?: string) {
@@ -33,7 +33,7 @@ export function resetEmail(name: string, url: string, minutes: number) {
   const text = [
     `Hi ${name},`,
     '',
-    'You asked to reset your Orakis password. Open the link below to choose a new one:',
+    'You asked to reset your Neuroneus password. Open the link below to choose a new one:',
     '',
     url,
     '',
@@ -45,7 +45,7 @@ export function resetEmail(name: string, url: string, minutes: number) {
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;color:#171717">
       <p>Hi ${escapeHtml(name)},</p>
-      <p>You asked to reset your Orakis password. Choose a new one here:</p>
+      <p>You asked to reset your Neuroneus password. Choose a new one here:</p>
       <p><a href="${escapeHtml(url)}" style="display:inline-block;padding:10px 18px;border-radius:6px;background:#171717;color:#fff;text-decoration:none">Reset your password</a></p>
       <p style="color:#6b7280;font-size:13px">This link works once and expires in ${minutes} minutes.</p>
       <p style="color:#6b7280;font-size:13px">If you didn't ask for this, you can ignore this email — your password has not changed.</p>

@@ -79,7 +79,7 @@ export const redirectUri = (req: VercelRequest, provider: Provider) =>
 
 /* --- transient flow state ---------------------------------------------- */
 
-const FLOW_COOKIE = 'orakis_oauth';
+const FLOW_COOKIE = 'neuroneus_oauth';
 /** Long enough to sign in, short enough that a stale tab cannot replay. */
 const FLOW_TTL_SECONDS = 600;
 

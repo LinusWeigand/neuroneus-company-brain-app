@@ -4,7 +4,7 @@
 
 **The tenant-isolated substrate the company brain runs on.**
 
-`app.limitless-stack.com`
+`www.couchtec.org`
 
 <sub>React 19 · TypeScript 6 · Vite 7 · Vercel Functions · Neon Postgres · pgvector</sub>
 
